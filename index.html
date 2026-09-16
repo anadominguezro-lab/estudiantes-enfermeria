@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rotación AP · Palma Norte</title>
+<meta name="description" content="Apuntes para estudiantes de enfermería en rotación por Atención Primaria. Centro de Salud Palma Norte.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#EDF1EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121816" media="(prefers-color-scheme: dark)">
+
+<!-- PWA -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Rotación AP">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+
+<!-- Fuentes: la app funciona igual si no cargan (fallbacks de sistema) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header class="topbar" id="topbar">
+  <button class="topbar-btn" id="btn-back" type="button" aria-label="Atrás" hidden>
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="topbar-title" id="topbar-title">Rotación AP</div>
+  <button class="topbar-btn" id="btn-print" type="button" aria-label="Imprimir" hidden>
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 8V4h10v4M7 17H4V10h16v7h-3M7 14h10v6H7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+  </button>
+</header>
+
+<main id="main" class="main" tabindex="-1"></main>
+
+<nav class="tabbar" aria-label="Secciones">
+  <a href="#/inicio" data-tab="inicio">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+    <span>Inicio</span>
+  </a>
+  <a href="#/guia" data-tab="guia">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5V5.5M8 7h8M8 10.5h8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+    <span>Guía</span>
+  </a>
+  <a href="#/checklist" data-tab="checklist">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8.5 12l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <span>Checklist</span>
+  </a>
+  <a href="#/buscar" data-tab="buscar">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    <span>Buscar</span>
+  </a>
+</nav>
+
+<div class="toast" id="toast-update" role="status" hidden>
+  <span>Hay una versión nueva</span>
+  <button type="button" id="btn-update">Actualizar</button>
+</div>
+
+<!-- Vista de impresión de la checklist (solo visible al exportar) -->
+<div id="print-checklist" class="print-checklist" aria-hidden="true"></div>
+
+<script src="./content-a.js"></script>
+<script src="./content-b.js"></script>
+<script src="./content-c.js"></script>
+<script src="./content-d.js"></script>
+<script src="./checklist.js"></script>
+<script src="./app.js"></script>
+<script>
+// Registro del service worker con ruta relativa (la app vive en un subdirectorio de GitHub Pages).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').then(function (reg) {
+      function ofrecerActualizacion(worker) {
+        var toast = document.getElementById('toast-update');
+        var btn = document.getElementById('btn-update');
+        if (!toast || !btn) return;
+        toast.hidden = false;
+        btn.onclick = function () {
+          btn.disabled = true;
+          worker.postMessage({ type: 'SKIP_WAITING' });
+        };
+      }
+      if (reg.waiting && navigator.serviceWorker.controller) ofrecerActualizacion(reg.waiting);
+      reg.addEventListener('updatefound', function () {
+        var nuevo = reg.installing;
+        if (!nuevo) return;
+        nuevo.addEventListener('statechange', function () {
+          if (nuevo.state === 'installed' && navigator.serviceWorker.controller) ofrecerActualizacion(nuevo);
+        });
+      });
+    }).catch(function (e) { console.warn('SW no registrado:', e); });
+
+    var recargando = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (recargando) return;
+      recargando = true;
+      window.location.reload();
+    });
+  });
+}
+</script>
+</body>
+</html>
